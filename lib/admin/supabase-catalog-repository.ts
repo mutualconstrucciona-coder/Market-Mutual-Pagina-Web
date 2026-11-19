@@ -1,4 +1,3 @@
-import 'server-only'
 import { randomUUID } from 'node:crypto'
 import type { CatalogRepository } from '@/lib/admin/catalog-repository'
 import type { CatalogCommand, CatalogSnapshot } from '@/lib/admin/catalog-rules'
