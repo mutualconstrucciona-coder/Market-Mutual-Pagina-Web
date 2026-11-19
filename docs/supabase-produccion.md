@@ -15,7 +15,7 @@ Proyecto dedicado: `qwbiemtonvzucatlvuri` — organización **Market Mutual**, r
 1. En el dashboard del proyecto, ir a **Settings → API Keys**.
 2. Copiar una **publishable** (`sb_publishable_...`) o **anon** como `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 3. Copiar una **secret** (`sb_secret_...`) o **service_role** legacy como `SUPABASE_SERVICE_ROLE_KEY`. Esta clave **nunca** va a GitHub ni al navegador.
-4. Configurar `SUPABASE_URL=https://qwbiemtonvzucatlvuri.supabase.co`.
+4. Configurar `SUPABASE_URL` usando la **Project URL** copiada desde **Supabase → Project Settings → API** (proyecto `qwbiemtonvzucatlvuri`). La URL completa no debe incluirse en archivos versionados para evitar el detector de secretos de Netlify.
 5. Registrar los tres valores en variables de entorno del hosting; si la app ejecuta localmente, en `.env.local`.
 6. Publicar **Next.js como aplicación con funciones de servidor**. No sirve una exportación estática para las APIs de catálogo y Auth.
 
