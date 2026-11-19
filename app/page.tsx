@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useCallback, useDeferredValue, useMemo, useRef, useState } from 'react'
 import { BenefitsSection } from '@/components/market/benefits-section'
 import { CartDrawer } from '@/components/market/cart-drawer'
 import { DeliverySection } from '@/components/market/delivery-section'
@@ -27,6 +27,13 @@ export default function Page() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [category, setCategory] = useState('Todos')
   const [visibleCount, setVisibleCount] = useState(48)
+  const deferredQuery = useDeferredValue(query)
+  // Evita recrear los 48+ botones de producto cada vez que cambia el carrito.
+  const addToCartRef = useRef(addToCart)
+  addToCartRef.current = addToCart
+  const handleAddToCart = useCallback((product: Product) => {
+    addToCartRef.current(product.id)
+  }, [])
 
   const availableProducts = useMemo(
     () => products.filter((product) => product.available && product.stock != null && product.stock > 0),
@@ -34,12 +41,14 @@ export default function Page() {
   )
 
   const visibleProducts = useMemo(() => availableProducts.filter((product) => {
-    const matchesQuery = matchesProductSearch(product, query)
+    const matchesQuery = matchesProductSearch(product, deferredQuery)
     const matchesCategory = category === 'Todos' || product.category === category
     return matchesQuery && matchesCategory
-  }), [query, category, availableProducts])
+  }), [deferredQuery, category, availableProducts])
 
   const offerProducts = useMemo(() => availableProducts.filter((product) => product.offer === true), [availableProducts])
+  const featuredProducts = useMemo(() => availableProducts.filter(p => p.featured).sort((a,b) => (a.featuredOrder ?? 0) - (b.featuredOrder ?? 0)), [availableProducts])
+  const paginatedProducts = useMemo(() => visibleProducts.slice(0, visibleCount), [visibleProducts, visibleCount])
 
   const changeQuery = (value: string) => {
     setQuery(value)
@@ -50,10 +59,6 @@ export default function Page() {
   const changeCategory = (value: string) => {
     setCategory(value)
     setVisibleCount(48)
-  }
-
-  const handleAddToCart = (product: Product) => {
-    addToCart(product.id)
   }
 
   return (
@@ -73,10 +78,10 @@ export default function Page() {
       <FeaturedCarousel key={flyers.map(flyer => flyer.id).join('|')} flyers={flyers} />
       {storageError && <div role="alert" className="mx-auto max-w-7xl px-4 py-5 text-red-800">{storageError} <button className="underline" onClick={() => { void refreshCatalog().catch(() => {}) }}>Volver a intentar</button></div>}
       {!catalogReady && <p role="status" className="px-4 py-8 text-center text-slate-600">Cargando productos…</p>}
-      <FeaturedProducts products={availableProducts.filter(p => p.featured).sort((a,b) => (a.featuredOrder ?? 0) - (b.featuredOrder ?? 0))} onAdd={handleAddToCart} />
+      <FeaturedProducts products={featuredProducts} onAdd={handleAddToCart} />
       <OffersSection products={offerProducts} onAdd={handleAddToCart} />
       <ProductSection
-        products={visibleProducts.slice(0, visibleCount)}
+        products={paginatedProducts}
         total={visibleProducts.length}
         categories={categories}
         category={category}
