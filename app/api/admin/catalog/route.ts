@@ -5,7 +5,7 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export async function GET(request: Request) {
   try {
-    requireAdmin(request)
+    await requireAdmin(request)
     return Response.json(await catalogRepository().read(), {
       headers: { 'Cache-Control': 'no-store' },
     })
@@ -15,7 +15,7 @@ export async function GET(request: Request) {
 }
 export async function POST(request: Request) {
   try {
-    const actor = requireAdmin(request)
+    const actor = await requireAdmin(request)
     const text = await request.text()
     if (text.length > 1000000)
       throw new CatalogError('La solicitud es demasiado grande.', 413)
