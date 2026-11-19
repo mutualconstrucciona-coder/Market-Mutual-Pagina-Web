@@ -1,5 +1,8 @@
 # Market Mutual
 
+> **Actualización 19/11/2026 — Supabase:** la cuenta corporativa dispone del proyecto independiente `market-mutual-web` (`qwbiemtonvzucatlvuri`), con 753 productos importados. Se implementó el adaptador de servidor, autenticación y Storage para fotos nuevas. La integración requiere configurar las variables de entorno en el hosting y dar de alta el primer administrador; aún no se certificó el build ni el despliegue. Véase [configuración de Supabase](docs/supabase-produccion.md). La información histórica de prototipo que sigue a continuación describe fases anteriores.
+
+
 Prototipo funcional local de la tienda online de la Mutual de los Trabajadores de la Construcción de la Patagonia.
 
 ## Ejecutar localmente
