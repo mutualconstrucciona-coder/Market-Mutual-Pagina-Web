@@ -4,14 +4,14 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   try {
     const snapshot = await catalogRepository().read()
-    // The shop never renders inventory quantities. In a central adapter, return a
-    // public projection and validate inventory again in server-side checkout.
+    // Hide precise inventory in the public API. Checkout via WhatsApp remains
+    // subject to staff confirmation; this is not authoritative stock validation.
     return Response.json(
       {
         revision: snapshot.revision,
         products: snapshot.products.filter(
           (p) => p.available && p.stock != null && p.stock > 0,
-        ),
+        ).map(p => ({ ...p, stock: 999999 })),
         families: snapshot.families,
         flyers: snapshot.flyers ?? [],
       },
