@@ -1,7 +1,7 @@
 'use client'
 
 /* eslint-disable @next/next/no-img-element */
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatMoney } from '@/lib/utils'
@@ -14,7 +14,7 @@ type ProductCardProps = {
   variant?: 'default' | 'offer'
 }
 
-export function ProductCard({ product, onAdd, variant = 'default' }: ProductCardProps) {
+export const ProductCard = memo(function ProductCard({ product, onAdd, variant = 'default' }: ProductCardProps) {
   const isOffer = variant === 'offer'
   const imageIsDisplayable = isApprovedProductImage(product) || product.demo === true
   const imageSource = imageIsDisplayable ? product.image || '/placeholder-product.svg' : '/placeholder-product.svg'
@@ -24,7 +24,7 @@ export function ProductCard({ product, onAdd, variant = 'default' }: ProductCard
   return (
     <article className={`group flex min-w-0 flex-col rounded-[22px] border bg-white p-2 shadow-[0_10px_28px_rgba(18,53,95,0.07)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_38px_rgba(18,53,95,0.13)] sm:p-2.5 ${isOffer ? 'border-[#79b9eb] ring-1 ring-[#2581d2]/10' : 'border-[#e1ebf4]'}`}>
       <div className="relative overflow-hidden rounded-[17px] bg-white">
-        <img src={image} alt={imageIsDisplayable ? product.name : `Imagen no disponible para ${product.name}`} onError={() => setImageFallback({ source: imageSource, url: '/placeholder-product.svg' })} loading="lazy" className="aspect-square w-full bg-white object-contain object-center p-2.5 transition duration-500 group-hover:scale-[1.03]" />
+        <img src={image} alt={imageIsDisplayable ? product.name : `Imagen no disponible para ${product.name}`} onError={() => setImageFallback({ source: imageSource, url: '/placeholder-product.svg' })} loading="lazy" decoding="async" className="aspect-square w-full bg-white object-contain object-center p-2.5 transition duration-500 group-hover:scale-[1.03]" />
         {product.discount && <span className="absolute left-2 top-2 rounded-md bg-[#ee6b4d] px-2 py-1 text-[10px] font-bold text-white">{product.discount}</span>}
       </div>
       {product.imageSource === 'open-food-facts' && product.imageCreditUrl && (
@@ -53,4 +53,4 @@ export function ProductCard({ product, onAdd, variant = 'default' }: ProductCard
       </div>
     </article>
   )
-}
+})
