@@ -20,7 +20,8 @@ export async function supabaseService(path: string, init: RequestInit = {}) {
   const key = serviceKey()
   const headers = new Headers(init.headers)
   headers.set('apikey', key)
-  headers.set('Authorization', 'Bearer ' + key)
+  // Modern sb_secret_* keys are not JWTs and must not be sent as Bearer tokens.
+  if (!key.startsWith('sb_secret_')) headers.set('Authorization', 'Bearer ' + key)
   if (init.body && !headers.has('content-type')) headers.set('Content-Type', 'application/json')
   return fetch(baseUrl() + path, { ...init, headers, cache: 'no-store' })
 }
