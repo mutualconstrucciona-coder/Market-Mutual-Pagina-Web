@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 import type { ReactNode } from 'react'
@@ -59,13 +60,18 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
   const [flyers, setFlyers] = useState<FeaturedFlyer[]>([])
   const [ready, setReady] = useState(false)
   const [storageError, setStorageError] = useState<string | null>(null)
+  // La tienda ya no reemplaza 753 productos si el servidor conserva la misma revisión.
+  const loadedRevision = useRef<number | null>(null)
   const refreshCatalog = useCallback(async () => {
     const response = await fetch('/api/catalog', { cache: 'no-store' })
     const result = await response.json()
     if (!response.ok)
       throw new Error(result.error || 'No pudimos leer el catálogo.')
-    setProducts(result.products)
-    setFlyers(result.flyers ?? featuredFlyers)
+    if (loadedRevision.current !== result.revision) {
+      loadedRevision.current = result.revision
+      setProducts(result.products)
+      setFlyers(result.flyers ?? featuredFlyers)
+    }
     setStorageError(null)
     setReady(true)
   }, [])
@@ -85,7 +91,8 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
         })
     }
     refresh()
-    const interval = window.setInterval(refresh, 15000)
+    // Comprobación moderada: evita volver a descargar el catálogo cada 15 segundos.
+    const interval = window.setInterval(() => { if (!document.hidden) refresh() }, 60000)
     window.addEventListener('focus', refresh)
     window.addEventListener('catalog-updated', refresh)
     return () => {
