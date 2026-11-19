@@ -7,7 +7,7 @@ export const supabaseConfigured = () =>
 
 export const baseUrl = () => {
   const url = process.env.SUPABASE_URL
-  if (!url || !/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(url))
+  if (url !== 'https://qwbiemtonvzucatlvuri.supabase.co')
     throw new Error('SUPABASE_URL inválida o ausente')
   return url
 }
