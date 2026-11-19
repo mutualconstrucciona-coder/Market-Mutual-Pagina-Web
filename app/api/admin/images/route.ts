@@ -4,6 +4,7 @@ import path from 'node:path'
 import { requireAdmin, errorResponse } from '@/lib/admin/http'
 import { developmentDataDir } from '@/lib/admin/catalog-repository'
 import { CatalogError } from '@/lib/admin/catalog-rules'
+import { supabaseConfigured, supabaseService } from '@/lib/supabase/server'
 export const runtime = 'nodejs'
 export async function POST(request: Request) {
   try {
@@ -25,9 +26,18 @@ export async function POST(request: Request) {
         422,
       )
     const name = `${randomUUID()}.webp`
-    const dir = path.join(developmentDataDir(), 'uploads')
-    await mkdir(dir, { recursive: true })
-    await writeFile(path.join(dir, name), bytes, { flag: 'wx' })
+    if (supabaseConfigured()) {
+      const result = await supabaseService('/storage/v1/object/market-product-images/' + name, {
+        method: 'POST',
+        headers: { 'Content-Type': 'image/webp', 'x-upsert': 'false' },
+        body: new Uint8Array(bytes),
+      })
+      if (!result.ok) throw new CatalogError('No se pudo guardar la imagen en Supabase.', 503)
+    } else {
+      const dir = path.join(developmentDataDir(), 'uploads')
+      await mkdir(dir, { recursive: true })
+      await writeFile(path.join(dir, name), bytes, { flag: 'wx' })
+    }
     return Response.json(
       { imageUrl: `/api/catalog/images/${name}` },
       { status: 201 },
