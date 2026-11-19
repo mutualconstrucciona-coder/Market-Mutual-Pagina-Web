@@ -1,5 +1,7 @@
 // Server-only boundary: never import this module from a client component.
 import { randomUUID } from 'node:crypto'
+import { supabaseConfigured } from '@/lib/supabase/server'
+import { SupabaseCatalogRepository } from './supabase-catalog-repository'
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { Product } from '@/lib/market-data'
@@ -152,5 +154,5 @@ class DevelopmentCatalogRepository implements CatalogRepository {
 
 // Replace this factory with a database adapter only after session/role validation exists.
 export function catalogRepository(): CatalogRepository {
-  return new DevelopmentCatalogRepository()
+  return supabaseConfigured() ? new SupabaseCatalogRepository() : new DevelopmentCatalogRepository()
 }
