@@ -76,7 +76,7 @@ function ProductPhoto({ product }: { product: Product }) {
   )
 }
 
-export function AdminCatalog({ localMode }: { localMode: boolean }) {
+export function AdminCatalog({ localMode, centralMode = false }: { localMode: boolean; centralMode?: boolean }) {
   const { refreshCatalog } = useCatalog()
   const [snapshot, setSnapshot] = useState<CatalogSnapshot | null>(null)
   const [tab, setTab] = useState<Tab>('products')
@@ -217,8 +217,8 @@ export function AdminCatalog({ localMode }: { localMode: boolean }) {
     await mutate(
       { type: 'save', product: draft },
       editor
-        ? 'Producto actualizado. El cambio ya está disponible en la tienda local.'
-        : 'Producto creado. Se mostrará en la tienda local si está activo y tiene stock.',
+        ? 'Producto actualizado. El cambio ya está disponible en la tienda.'
+        : 'Producto creado. Se mostrará en la tienda si está activo y tiene stock.',
     )
     setEditor(undefined)
     setFormDirty(false)
@@ -415,16 +415,17 @@ export function AdminCatalog({ localMode }: { localMode: boolean }) {
         <div className={styles.connection}>
           <strong>
             <span className={styles.dot} />
-            Sin conexión central
+            {centralMode ? 'Conexión central activa' : 'Sin conexión central'}
           </strong>
-          Pruebas en esta PC.
+          {centralMode ? 'Catálogo central · Supabase' : 'Pruebas en esta PC.'}
           <br />
-          Acceso del personal pendiente.
+          {centralMode ? 'Acceso autorizado' : 'Acceso del personal pendiente.'}
         </div>
       </aside>
       <div className={styles.main} id="admin-content">
         <div className={styles.topbar}>
           <span>Market Mutual / Administración</span>
+          {centralMode && <button className={styles.storeLink} type="button" onClick={async () => { await fetch('/api/admin/logout', {method:'POST'}); window.location.assign('/admin') }}>Cerrar sesión</button>}
           <a
             className={styles.storeLink}
             href="/"
@@ -439,11 +440,11 @@ export function AdminCatalog({ localMode }: { localMode: boolean }) {
           <ShieldAlert />
           <span>
             <strong>
-              {localMode
+              {centralMode ? 'Panel conectado a Supabase.' : localMode
                 ? 'Modo de prueba en esta PC.'
                 : 'Panel online sin habilitar.'}
             </strong>{' '}
-            {localMode
+            {centralMode ? 'Los cambios se guardan en el catálogo central.' : localMode
               ? 'Los cambios se guardan en este servidor local; no se comparten entre computadoras.'
               : 'Falta configurar base de datos y usuarios autorizados.'}
           </span>
@@ -543,16 +544,14 @@ export function AdminCatalog({ localMode }: { localMode: boolean }) {
           <section className={`${styles.panel} ${styles.config}`}>
             <h2>Qué falta para trabajar desde cualquier PC</h2>
             <p>
-              El panel está preparado para probar los cambios con la tienda
-              local. Todavía no tiene inicio de sesión ni una base de datos
-              compartida. No debe habilitarse para el personal en este estado.
+              {centralMode ? 'Las operaciones del catálogo usan Supabase con acceso de personal autorizado.' : 'El panel está preparado para probar cambios localmente; todavía no tiene inicio de sesión ni una base de datos compartida.'}
             </p>
             <ul>
               <li>
                 <strong>
                   Base de datos central{' '}
                   <span className={`${styles.badge} ${styles.warning}`}>
-                    Pendiente
+                    {centralMode ? 'Conectada' : 'Pendiente'}
                   </span>
                 </strong>
                 <small>
@@ -1017,7 +1016,7 @@ export function AdminCatalog({ localMode }: { localMode: boolean }) {
           </>
         )}
         <p className="mt-6 text-xs text-slate-500">
-          Los cambios de prueba se reflejan en la tienda local. La cantidad de
+          Los cambios de prueba se reflejan en la tienda. La cantidad de
           stock se mantiene fuera de las vistas de clientes.
         </p>
       </div>
