@@ -1,6 +1,5 @@
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
-import { baseUrl, supabaseConfigured } from '@/lib/supabase/server'
 import {
   developmentDataDir,
   localAdminEnabled,

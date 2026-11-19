@@ -28,6 +28,7 @@ __pycache__/
 *.log
 .eslintcache
 _tmp/
+supabase/.temp/
 
 # OS / editor
 .DS_Store

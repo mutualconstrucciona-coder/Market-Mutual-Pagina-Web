@@ -1,7 +1,5 @@
 import { catalogRepository } from '@/lib/admin/catalog-repository'
-
-// Reservamos las últimas tres unidades para la venta presencial.
-const MINIMUM_RESERVED_STOCK = 3
+import { hasOnlineStock } from '@/lib/inventory'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export async function GET() {
@@ -13,7 +11,7 @@ export async function GET() {
       {
         revision: snapshot.revision,
         products: snapshot.products.filter(
-          (p) => p.available && p.stock != null && p.stock > MINIMUM_RESERVED_STOCK,
+          (p) => p.available && hasOnlineStock(p.stock),
         ).map(p => ({ ...p, stock: 999999 })),
         families: snapshot.families,
         flyers: snapshot.flyers ?? [],

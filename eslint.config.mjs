@@ -10,6 +10,7 @@ export default defineConfig([
     '**/.next/**',
     '**/.next-*/**',
     '**/.market-admin/**',
+    '**/_tmp/**',
     '**/node_modules/**',
     '**/public/**',
     '**/next-env.d.ts',

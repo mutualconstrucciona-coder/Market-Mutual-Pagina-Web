@@ -10,6 +10,7 @@ Proyecto dedicado: `qwbiemtonvzucatlvuri` — organización **Market Mutual**, r
 - El panel requiere un usuario de Supabase Auth con registro explícito en `market_admin_users`.
 - Las fotos del repositorio se siguen sirviendo desde `public/products` y `public/flyers`; las fotos nuevas del panel se guardan en Storage.
 - El checkout de WhatsApp es orientativo y **no** descuenta stock ni crea órdenes transaccionales.
+- La rama de desarrollo incorpora importaciones Posberry con vista previa, auditoría y reversión. La migración `20261119175030_posberry_imports.sql` todavía no fue aplicada a producción.
 
 ## Configurar el entorno de ejecución
 1. En el dashboard del proyecto, ir a **Settings → API Keys**.
@@ -40,4 +41,5 @@ El UUID de ejemplo no corresponde a ningún usuario y **debe reemplazarse**. El 
 - El histórico `public/data/catalog-posberry.json` aún contiene cantidades de la semilla y es accesible públicamente. Antes de producción debe retirarse de `public/` y ajustar las rutas que lo consumen si el stock debe ser confidencial.
 - Las tablas no otorgan acceso a `anon`/`authenticated`, por diseño; solo el servidor accede con credenciales de servicio tras verificar Supabase Auth y la tabla de administradores.
 - No ejecutar nuevamente la semilla de 753 productos si ya existe un catálogo en la base.
+- No ejecutar `supabase db push` hasta reconciliar los números de las dos migraciones históricas locales con las versiones registradas en el proyecto. Consultar `docs/importaciones-posberry.md`.
 - Pendiente ejecutar y verificar: `pnpm install`, `pnpm typecheck`, `pnpm lint`, `pnpm test:admin`, `pnpm build`, pruebas de sesión, edición, subida de imágenes y checkout.
