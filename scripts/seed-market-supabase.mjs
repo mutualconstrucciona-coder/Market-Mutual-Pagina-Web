@@ -17,19 +17,26 @@ if (origin.protocol !== 'https:' || origin.hostname !== 'qwbiemtonvzucatlvuri.su
 }
 const raw = JSON.parse(await readFile(resolve('public/data/catalog-posberry.json'), 'utf8'))
 const assoc = JSON.parse(await readFile(resolve('public/data/product-image-associations.json'), 'utf8'))
+const local = JSON.parse(await readFile(resolve('public/data/product-image-local.json'), 'utf8'))
 if (!Array.isArray(raw.products) || raw.products.length !== 753) {
   throw new Error('El catálogo local no tiene los 753 productos esperados: se canceló la importación.')
 }
 const approved = new Map((assoc.associations ?? [])
   .filter(a => a.status === 'approved' && a.productId && a.imageUrl)
   .map(a => [a.productId, a]))
+const localImages = new Map((local.associations ?? [])
+  .filter(a => a.productId && typeof a.imageUrl === 'string' && /^\/products\/[a-zA-Z0-9_-]+\.webp$/.test(a.imageUrl))
+  .map(a => [a.productId, a.imageUrl]))
 const products = raw.products.map(p => {
-  const image = approved.get(p.id)
-  return image && !p.image ? { ...p, image: image.imageUrl, imageSource: 'open-food-facts', imageCreditUrl: image.sourceProductUrl, imageLicense: assoc.license } : p
+  const image = localImages.get(p.id)
+  if (image) return { ...p, image, imageSource: 'local-ean', imageCreditUrl: undefined, imageLicense: undefined }
+  const other = approved.get(p.id)
+  if (other) return { ...p, image: other.imageUrl, imageSource: 'open-food-facts', imageCreditUrl: other.sourceProductUrl, imageLicense: assoc.license }
+  return p
 })
 const families = [...new Set(products.map(p => p.category))].sort((a,b)=>a.localeCompare(b,'es'))
 // Evitar sobrescribir cualquier trabajo ya hecho en el panel.
-const headers = { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }
+const headers = { apikey: key, ...(!key.startsWith('sb_secret_') ? { Authorization: `Bearer ${key}` } : {}), 'Content-Type': 'application/json' }
 const endpoint = `${base}/rest/v1/market_catalog_state`
 const check = await fetch(`${endpoint}?select=id,revision,products&id=eq.1`, { headers })
 if (!check.ok) throw new Error(`No se pudo comprobar el estado del catálogo (${check.status}): ${await check.text()}`)
@@ -46,4 +53,4 @@ const result = await fetch(endpoint, {
   body: JSON.stringify({ id: 1, revision: 0, products, families, flyers: [] })
 })
 if (!result.ok) throw new Error(`La importación fue rechazada (${result.status}): ${await result.text()}`)
-console.log(`Importación inicial: ${products.length} productos y ${families.length} familias. Imágenes vinculadas: ${approved.size}.`)
+console.log(`Importación inicial: ${products.length} productos y ${families.length} familias. Imágenes locales: ${products.filter(p=>p.imageSource==='local-ean').length}; imágenes externas aprobadas: ${products.filter(p=>p.imageSource==='open-food-facts').length}.`)
