@@ -12,7 +12,7 @@ if (!base || !key) {
   process.exit(1)
 }
 const origin = new URL(base)
-if (origin.href !== 'https://qwbiemtonvzucatlvuri.supabase.co/') {
+if (origin.protocol !== 'https:' || origin.hostname !== 'qwbiemtonvzucatlvuri.supabase.co' || origin.pathname !== '/' || origin.search || origin.hash) {
   throw new Error('SUPABASE_URL debe ser una URL HTTPS válida de proyecto Supabase.')
 }
 const raw = JSON.parse(await readFile(resolve('public/data/catalog-posberry.json'), 'utf8'))
