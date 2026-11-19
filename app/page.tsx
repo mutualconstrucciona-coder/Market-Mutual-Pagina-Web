@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useDeferredValue, useMemo, useRef, useState } from 'react'
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { BenefitsSection } from '@/components/market/benefits-section'
 import { CartDrawer } from '@/components/market/cart-drawer'
 import { DeliverySection } from '@/components/market/delivery-section'
@@ -30,7 +30,7 @@ export default function Page() {
   const deferredQuery = useDeferredValue(query)
   // Evita recrear los 48+ botones de producto cada vez que cambia el carrito.
   const addToCartRef = useRef(addToCart)
-  addToCartRef.current = addToCart
+  useEffect(() => { addToCartRef.current = addToCart }, [addToCart])
   const handleAddToCart = useCallback((product: Product) => {
     addToCartRef.current(product.id)
   }, [])
