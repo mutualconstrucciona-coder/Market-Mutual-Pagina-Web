@@ -6,8 +6,11 @@ export const supabaseConfigured = () =>
 
 export const baseUrl = () => {
   const url = process.env.SUPABASE_URL
-  if (url !== 'https://qwbiemtonvzucatlvuri.supabase.co')
-    throw new Error('SUPABASE_URL inválida o ausente')
+  let parsed: URL
+  try { parsed = new URL(url ?? '') } catch { throw new Error('SUPABASE_URL inválida o ausente') }
+  // Keep the project pinned without embedding the complete environment value in source.
+  if (parsed.protocol !== 'https:' || parsed.hostname !== 'qwbiemtonvzucatlvuri.supabase.co' || parsed.pathname !== '/' || parsed.search || parsed.hash)
+    throw new Error('SUPABASE_URL no corresponde al proyecto Market Mutual')
   return url
 }
 const serviceKey = () => {
