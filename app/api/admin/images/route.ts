@@ -7,7 +7,7 @@ import { CatalogError } from '@/lib/admin/catalog-rules'
 export const runtime = 'nodejs'
 export async function POST(request: Request) {
   try {
-    requireAdmin(request)
+    await requireAdmin(request)
     if (Number(request.headers.get('content-length')) > 6 * 1024 * 1024)
       throw new CatalogError('La imagen debe pesar menos de 5 MB.', 413)
     const form = await request.formData()
