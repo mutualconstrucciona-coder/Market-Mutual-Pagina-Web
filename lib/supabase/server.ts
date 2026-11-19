@@ -1,4 +1,3 @@
-import 'server-only'
 import { cookies } from 'next/headers'
 import { CatalogError } from '@/lib/admin/catalog-rules'
 
