@@ -1,7 +1,12 @@
 import { CatalogError } from './catalog-rules'
 import { localAdminEnabled } from './catalog-repository'
+import { assertSameOrigin, requireMarketAdmin, supabaseConfigured } from '@/lib/supabase/server'
 
-export function requireAdmin(request: Request) {
+export async function requireAdmin(request: Request) {
+  if (supabaseConfigured()) {
+    if (request.method !== 'GET') assertSameOrigin(request)
+    return requireMarketAdmin()
+  }
   if (!localAdminEnabled())
     throw new CatalogError(
       'Falta configurar base de datos central y acceso del personal. El panel online está deshabilitado.',
