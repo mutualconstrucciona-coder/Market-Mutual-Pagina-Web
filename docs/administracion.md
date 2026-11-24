@@ -1,5 +1,7 @@
 # Administración de Market Mutual
 
+> Actualización 19/11/2026: el repositorio correcto ya contiene persistencia central y autenticación en Supabase para el proyecto `qwbiemtonvzucatlvuri`. La descripción histórica de modo local que sigue debajo se conserva como referencia. Para el estado de producción consultar `docs/supabase-produccion.md`; para stock/precios de Posberry consultar `docs/importaciones-posberry.md`.
+
 ## Estado real
 
 El panel `/admin` permite probar gestión de productos, fotos, precios y destacados. **No está habilitado para operación online ni para el personal.** No se encontró una base de datos, un servicio de autenticación ni credenciales configuradas en el proyecto. No se creó ni modificó infraestructura de producción.

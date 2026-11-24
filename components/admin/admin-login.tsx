@@ -1,6 +1,9 @@
 'use client'
 import { useState } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 export function AdminLogin() {
+  const router = useRouter()
   const [email,setEmail] = useState('')
   const [password,setPassword] = useState('')
   const [loading,setLoading] = useState(false)
@@ -15,11 +18,11 @@ export function AdminLogin() {
               body:JSON.stringify({email,password})})
             const result=await response.json()
             if (!response.ok) throw new Error(result.error || 'No se pudo ingresar.')
-            window.location.assign('/admin')
+            router.refresh()
           } catch (caught) {setError(caught instanceof Error?caught.message:'Error inesperado')}
           finally {setLoading(false)}
         }}>
-        <a href="/" className="text-sm text-blue-700 underline">Volver a la tienda</a>
+        <Link href="/" className="text-sm text-blue-700 underline">Volver a la tienda</Link>
         <h1 className="text-2xl font-bold text-[#12243b]">Market Mutual · Administración</h1>
         <p className="text-sm text-slate-600">Ingresá con una cuenta autorizada para administrar el catálogo.</p>
         <label className="block text-sm font-medium">Correo electrónico

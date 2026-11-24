@@ -35,6 +35,7 @@ cloudflare-env.d.ts
 *.log
 .eslintcache
 _tmp/
+supabase/.temp/
 
 # OS / editor
 .DS_Store

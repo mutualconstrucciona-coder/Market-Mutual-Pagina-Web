@@ -9,6 +9,7 @@ import { Header } from '@/components/market/header'
 import { Hero } from '@/components/market/hero'
 import { FeaturedCarousel } from '@/components/market/featured-carousel'
 import { FeaturedProducts } from '@/components/market/featured-products'
+import { FloatingCartButton } from '@/components/market/floating-cart-button'
 import { HowToBuySection } from '@/components/market/how-to-buy-section'
 import { OffersSection } from '@/components/market/offers-section'
 import { PaymentMethodsSection } from '@/components/market/payment-methods-section'
@@ -98,6 +99,7 @@ export default function Page() {
       <Footer hasOffers={offerProducts.length > 0} />
       <p className="sr-only" role="status" aria-atomic="true">{ready ? `Carrito: ${cartCount} ${cartCount === 1 ? 'producto' : 'productos'}.` : ''}</p>
       <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
+      <FloatingCartButton cartReady={ready} cartCount={cartCount} onOpenCart={() => setCartOpen(true)} />
       <MobileBottomNav cartReady={ready} cartCount={cartCount} onOpenCart={() => setCartOpen(true)} />
     </main>
   )

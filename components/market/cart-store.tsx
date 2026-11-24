@@ -46,20 +46,16 @@ function loadCart(): Cart {
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const { products, ready: catalogReady } = useCatalog()
-  const [cart, setCart] = useState<Cart>(loadCart)
+  const [cart, setCart] = useState<Cart>({})
   const [cartNotice, setCartNotice] = useState<string | null>(null)
-  // `ready` evita errores de hydration: tanto el servidor como el primer render
-  // del cliente parten con ready=false (no se muestra UI dependiente del carrito).
-  // Tras el primer efecto (solo client) se marca ready, y el carrito ya fue
-  // cargado de forma perezosa por loadCart() al inicializar el estado.
+  // Servidor y primer render del cliente parten del mismo carrito vacío. El
+  // contenido persistido se restaura después de hidratar, sin borrar compras.
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    // Marcar el carrito como listo únicamente tras el montaje del cliente.
-    // Es un caso reconocido de "sincronizar con una fuente externa" (localStorage):
-    // tanto servidor como primer render parten con ready=false para no generar
-    // desajuste de hydration, y la UI dependiente del carrito se muestra recién acá.
+    // localStorage es una fuente externa y solo está disponible en el cliente.
     // eslint-disable-next-line react-hooks/set-state-in-effect
+    setCart(loadCart())
     setMounted(true)
   }, [])
 

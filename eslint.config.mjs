@@ -9,7 +9,9 @@ export default defineConfig([
   globalIgnores([
     '**/.next/**',
     '**/.next-*/**',
+    '**/.open-next/**',
     '**/.market-admin/**',
+    '**/_tmp/**',
     '**/node_modules/**',
     '**/public/**',
     '**/next-env.d.ts',

@@ -2,6 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import {
   ArrowDown,
   ArrowUp,
@@ -10,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ExternalLink,
+  FileSpreadsheet,
   ImageOff,
   Package,
   Pencil,
@@ -40,10 +42,11 @@ import { formatMoney } from '@/lib/utils'
 import { ProductEditor } from './product-editor'
 import { PriceAdjustment } from './price-adjustment'
 import { FlyerManager } from './flyer-manager'
+import { ImportManager } from './import-manager'
 import { featuredFlyers } from '@/lib/featured-flyers'
 import styles from './admin.module.css'
 
-type Tab = 'products' | 'featured' | 'configuration'
+type Tab = 'products' | 'featured' | 'imports' | 'configuration'
 const PAGE_SIZE = 25
 const EMPTY_PRODUCTS: Product[] = []
 const normalize = (value: string) =>
@@ -77,6 +80,7 @@ function ProductPhoto({ product }: { product: Product }) {
 }
 
 export function AdminCatalog({ localMode, centralMode = false }: { localMode: boolean; centralMode?: boolean }) {
+  const router = useRouter()
   const { refreshCatalog } = useCatalog()
   const [snapshot, setSnapshot] = useState<CatalogSnapshot | null>(null)
   const [tab, setTab] = useState<Tab>('products')
@@ -393,6 +397,7 @@ export function AdminCatalog({ localMode, centralMode = false }: { localMode: bo
             [
               { id: 'products', label: 'Productos', Icon: Package },
               { id: 'featured', label: 'Destacados', Icon: Star },
+              { id: 'imports', label: 'Importaciones', Icon: FileSpreadsheet },
               { id: 'configuration', label: 'Configuración', Icon: Settings2 },
             ] as const
           ).map((item) => (
@@ -425,7 +430,7 @@ export function AdminCatalog({ localMode, centralMode = false }: { localMode: bo
       <div className={styles.main} id="admin-content">
         <div className={styles.topbar}>
           <span>Market Mutual / Administración</span>
-          {centralMode && <button className={styles.storeLink} type="button" onClick={async () => { await fetch('/api/admin/logout', {method:'POST'}); window.location.assign('/admin') }}>Cerrar sesión</button>}
+          {centralMode && <button className={styles.storeLink} type="button" onClick={async () => { await fetch('/api/admin/logout', {method:'POST'}); router.refresh() }}>Cerrar sesión</button>}
           <a
             className={styles.storeLink}
             href="/"
@@ -463,14 +468,18 @@ export function AdminCatalog({ localMode, centralMode = false }: { localMode: bo
                 ? 'Productos'
                 : tab === 'featured'
                   ? 'Destacados del inicio'
-                  : 'Preparar el acceso del personal'}
+                  : tab === 'imports'
+                    ? 'Importaciones masivas'
+                    : 'Preparar el acceso del personal'}
             </h1>
             <p>
               {tab === 'products'
                 ? 'Tu catálogo, ordenado y al día.'
                 : tab === 'featured'
                   ? 'Administrá hasta 5 flyers del carrusel del inicio.'
-                  : 'La integración online todavía no está configurada.'}
+                  : tab === 'imports'
+                    ? 'Actualizá stock o precios de Posberry con vista previa, auditoría y reversión.'
+                    : 'Revisá la conexión central y los permisos administrativos.'}
             </p>
           </div>
           {tab === 'products' && (
@@ -601,6 +610,23 @@ export function AdminCatalog({ localMode, centralMode = false }: { localMode: bo
               catálogo.
             </p>
           </section>
+        ) : tab === 'imports' ? (
+          snapshot ? (
+            <ImportManager
+              snapshot={snapshot}
+              centralMode={centralMode}
+              onSnapshot={(next) => {
+                setSnapshot(next)
+                void refreshCatalog().catch(() => {})
+              }}
+              onNotice={setNotice}
+              onError={setError}
+            />
+          ) : (
+            <section className={`${styles.panel} ${styles.empty}`} role="status">
+              Cargando catálogo central…
+            </section>
+          )
         ) : (
           <>
             <div className={styles.stats}>

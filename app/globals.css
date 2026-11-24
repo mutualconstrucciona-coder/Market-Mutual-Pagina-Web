@@ -228,6 +228,22 @@
   }
 }
 
+@keyframes floating-cart-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0) scale(0.82);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+.floating-cart-entry {
+  animation: floating-cart-in 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 .benefit-logo-track {
   animation: benefit-logo-marquee var(--benefit-marquee-duration, 34s) linear infinite;
   will-change: transform;
@@ -239,6 +255,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .floating-cart-entry {
+    animation: none;
+  }
+
   .benefit-logo-track {
     animation: none;
     transform: none;

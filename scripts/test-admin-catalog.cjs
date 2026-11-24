@@ -18,6 +18,50 @@ mod.filename = filename
 mod.paths = module.paths
 mod._compile(compiled, filename)
 const { applyCatalogCommand, pricePreview, parsePriceInput } = mod.exports
+
+function loadTs(relativePath, stubs = {}) {
+  const target = path.resolve(relativePath)
+  const output = ts.transpileModule(fs.readFileSync(target, 'utf8'), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText
+  const loaded = new Module(target, module)
+  loaded.filename = target
+  loaded.paths = module.paths
+  const originalRequire = loaded.require.bind(loaded)
+  loaded.require = (request) => (request in stubs ? stubs[request] : originalRequire(request))
+  loaded._compile(output, target)
+  return loaded.exports
+}
+const inventory = loadTs('lib/inventory.ts')
+const importRules = loadTs('lib/admin/import-rules.ts', {
+  '@/lib/inventory': inventory,
+})
+const { buildImportPreview, applyImportChanges, revertImportChanges } = importRules
+const importFile = loadTs('lib/admin/import-file.ts', {
+  'server-only': {},
+})
+const { parseImportFile } = importFile
+
+test('Posberry CSV parsing preserves text codes, accents and quoted separators', async () => {
+  const file = new File(
+    [
+      '\uFEFFCódigo interno;EAN;Stock;Producto\r\n' +
+        '00017;07790000000001;4;Yerba Ñandú\r\n' +
+        '00018;07790000000002;3;"Galletitas, clásicas"\r\n',
+    ],
+    'stock-posberry.csv',
+    { type: 'text/csv' },
+  )
+  const parsed = await parseImportFile(file)
+  assert.equal(parsed.sheets.length, 1)
+  assert.equal(parsed.sheets[0].name, 'CSV')
+  assert.equal(parsed.sheets[0].rows[1][0], '00017')
+  assert.equal(parsed.sheets[0].rows[1][1], '07790000000001')
+  assert.equal(parsed.sheets[0].rows[1][3], 'Yerba Ñandú')
+  assert.equal(parsed.sheets[0].rows[2][3], 'Galletitas, clásicas')
+  assert.match(parsed.fileHash, /^[a-f0-9]{64}$/)
+})
+
 test('Argentine price formatting does not confuse thousands and cents', () => {
   assert.equal(parsePriceInput('1.250,50'), 1250.5)
   assert.equal(parsePriceInput('$ 1.000'), 1000)
@@ -295,4 +339,128 @@ test('flyers reject duplicate identifiers, missing names and unsafe image/link U
     [{ ...s.flyers[0], href: 'javascript:alert(1)' }],
   ])
     assert.throws(() => applyCatalogCommand(s, { type: 'flyers', flyers }, ''))
+})
+
+const importProducts = () => [
+  { ...product, stock: 8, price: 100, available: true },
+  { ...product, id: 'sku:2', sku: '0002', barcode: '07790000000002', name: 'Producto B', stock: 3, price: 200, available: true },
+  { ...product, id: 'sku:3', sku: '3', barcode: '7790000000003', name: 'Producto C', stock: 0, price: 300, available: false },
+]
+const importSource = (kind, rows, extra = {}) => ({
+  kind,
+  fileName: 'posberry.xlsx',
+  fileHash: 'a'.repeat(64),
+  fileSize: 1200,
+  sheetName: 'Productos',
+  rows,
+  headerRow: 0,
+  mapping: { sku: 0, ean: 1, value: 2, name: 3 },
+  missingStockPolicy: 'keep',
+  ...extra,
+})
+
+test('stock import updates only matched products and preserves price, images and checkout data', () => {
+  const products = importProducts()
+  const preview = buildImportPreview(products, 7, importSource('stock', [
+    ['Código interno', 'EAN', 'Stock', 'Producto'],
+    ['1', '7790000000001', '2', 'Producto A'],
+    ['999', '', '15', 'No existe'],
+  ]))
+  assert.equal(preview.modified, 1)
+  assert.equal(preview.unmatched, 1)
+  const next = applyImportChanges(products, preview.changes)
+  assert.equal(next[0].stock, 2)
+  assert.equal(next[0].price, 100)
+  assert.equal(next[0].image, product.image)
+  assert.deepEqual(next[1], products[1])
+})
+
+test('price import changes only price and rejects zero, negative, empty or invalid prices', () => {
+  const products = importProducts()
+  const valid = buildImportPreview(products, 1, importSource('price', [
+    ['SKU', 'EAN', 'Precio', 'Producto'],
+    ['1', '', '1.234,50', 'Producto A'],
+  ]))
+  const next = applyImportChanges(products, valid.changes)
+  assert.equal(next[0].price, 1234.5)
+  assert.equal(next[0].stock, 8)
+  assert.equal(next[0].available, true)
+  for (const value of ['', '0', '-1', 'abc']) {
+    const preview = buildImportPreview(products, 1, importSource('price', [
+      ['SKU', 'EAN', 'Precio', 'Producto'],
+      ['1', '', value, 'Producto A'],
+    ]))
+    assert.equal(preview.invalid, 1)
+    assert.equal(preview.criticalErrors, 1)
+  }
+})
+
+test('stock threshold hides at 3, shows at 4, hides at zero and republishes after replenishment', () => {
+  assert.equal(inventory.hasOnlineStock(3), false)
+  assert.equal(inventory.hasOnlineStock(4), true)
+  assert.equal(inventory.hasOnlineStock(0), false)
+  const hidden = buildImportPreview(importProducts(), 1, importSource('stock', [
+    ['SKU', 'EAN', 'Stock', 'Producto'], ['1', '', '3', 'Producto A'],
+  ]))
+  assert.equal(hidden.hiddenByThreshold, 1)
+  const republished = buildImportPreview(importProducts(), 1, importSource('stock', [
+    ['SKU', 'EAN', 'Stock', 'Producto'], ['0002', '', '4', 'Producto B'],
+  ]))
+  assert.equal(republished.republishedByThreshold, 1)
+})
+
+test('duplicate file rows and ambiguous legacy EAN matches are critical', () => {
+  const products = importProducts()
+  products[2].barcode = products[1].barcode
+  const preview = buildImportPreview(products, 1, importSource('stock', [
+    ['SKU', 'EAN', 'Stock', 'Producto'],
+    ['1', '', '5', 'Producto A'],
+    ['1', '', '6', 'Producto A repetido'],
+    ['', '07790000000002', '8', 'EAN duplicado'],
+  ]))
+  assert.equal(preview.duplicates, 1)
+  assert.equal(preview.ambiguous, 1)
+  assert.equal(preview.criticalErrors, 2)
+})
+
+test('absent products are preserved by default and zeroed only after explicit full-inventory confirmation', () => {
+  const products = importProducts()
+  const keep = buildImportPreview(products, 2, importSource('stock', [
+    ['SKU', 'EAN', 'Stock', 'Producto'], ['1', '', '9', 'Producto A'],
+  ]))
+  assert.equal(keep.changes.length, 1)
+  assert.equal(applyImportChanges(products, keep.changes)[1].stock, 3)
+  assert.throws(() => buildImportPreview(products, 2, importSource('stock', [
+    ['SKU', 'EAN', 'Stock', 'Producto'], ['1', '', '9', 'Producto A'],
+  ], { missingStockPolicy: 'zero', completeInventoryConfirmed: false })))
+  const zero = buildImportPreview(products, 2, importSource('stock', [
+    ['SKU', 'EAN', 'Stock', 'Producto'], ['1', '', '9', 'Producto A'],
+  ], { missingStockPolicy: 'zero', completeInventoryConfirmed: true }))
+  assert.equal(applyImportChanges(products, zero.changes)[1].stock, 0)
+})
+
+test('revision values prevent stale apply and reversal restores only compatible fields', () => {
+  const products = importProducts()
+  const preview = buildImportPreview(products, 4, importSource('stock', [
+    ['SKU', 'EAN', 'Stock', 'Producto'], ['1', '', '5', 'Producto A'],
+  ]))
+  assert.throws(() => applyImportChanges([{ ...products[0], stock: 6 }, ...products.slice(1)], preview.changes), /cambió/)
+  const applied = applyImportChanges(products, preview.changes)
+  assert.deepEqual(revertImportChanges(applied, preview.changes), products)
+  assert.throws(() => revertImportChanges([{ ...applied[0], stock: 7 }, ...applied.slice(1)], preview.changes), /cambio posterior/)
+})
+
+test('all import API mutations require admin auth and migration records audit atomically', () => {
+  for (const route of [
+    'app/api/admin/imports/parse/route.ts',
+    'app/api/admin/imports/preview/route.ts',
+    'app/api/admin/imports/apply/route.ts',
+    'app/api/admin/imports/history/route.ts',
+    'app/api/admin/imports/revert/route.ts',
+  ]) assert.match(fs.readFileSync(route, 'utf8'), /requireAdmin\(request\)/)
+  const migration = fs.readFileSync('supabase/migrations/20261119175030_posberry_imports.sql', 'utf8')
+  assert.match(migration, /insert into public\.market_catalog_audit/)
+  assert.match(migration, /market_revision_conflict/)
+  assert.match(migration, /market_duplicate_import/)
+  assert.match(migration, /revoke all on table public\.market_catalog_imports from anon, authenticated/)
 })
