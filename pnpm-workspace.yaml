@@ -3,7 +3,13 @@ pmOnFail: ignore
 minimumReleaseAgeExclude:
   - '@next/*'
   - next
+  - '@cloudflare/workers-utils@0.57.0'
+  - miniflare@5.20261123.1-beta
+  - wrangler@4.168.0
 
 # Dependencias permitidas para ejecutar sus scripts de build (política de supply-chain)
 allowBuilds:
+  esbuild: true
+  rclone.js: true
   unrs-resolver: true
+  workerd: true

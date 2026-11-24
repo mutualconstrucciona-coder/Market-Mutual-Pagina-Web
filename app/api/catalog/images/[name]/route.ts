@@ -1,5 +1,3 @@
-import { readFile } from 'node:fs/promises'
-import path from 'node:path'
 import { baseUrl, supabaseConfigured } from '@/lib/supabase/server'
 import {
   developmentDataDir,
@@ -11,9 +9,31 @@ export async function GET(
   { params }: { params: Promise<{ name: string }> },
 ) {
   const { name } = await params
-  if (!localAdminEnabled() || !/^[a-f0-9-]{36}\.webp$/.test(name))
+  if (!/^[a-f0-9-]{36}\.webp$/.test(name))
     return new Response(null, { status: 404 })
+
+  if (supabaseConfigured()) {
+    const response = await fetch(
+      `${baseUrl()}/storage/v1/object/public/market-product-images/${name}`,
+      { cache: 'force-cache' },
+    )
+    if (!response.ok) return new Response(null, { status: 404 })
+    return new Response(response.body, {
+      headers: {
+        'Content-Type': 'image/webp',
+        'Cache-Control': 'public,max-age=31536000,immutable',
+        'X-Content-Type-Options': 'nosniff',
+      },
+    })
+  }
+
+  if (!localAdminEnabled()) return new Response(null, { status: 404 })
+
   try {
+    const [{ readFile }, { default: path }] = await Promise.all([
+      import('node:fs/promises'),
+      import('node:path'),
+    ])
     return new Response(
       await readFile(path.join(developmentDataDir(), 'uploads', name)),
       {
