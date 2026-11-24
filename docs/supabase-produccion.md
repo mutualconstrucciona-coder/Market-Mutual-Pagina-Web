@@ -13,13 +13,18 @@ Proyecto dedicado: `qwbiemtonvzucatlvuri` — organización **Market Mutual**, r
 
 ## Configurar el entorno de ejecución
 1. En el dashboard del proyecto, ir a **Settings → API Keys**.
-2. Copiar una **publishable** (`sb_publishable_...`) o **anon** como `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-3. Copiar una **secret** (`sb_secret_...`) o **service_role** legacy como `SUPABASE_SERVICE_ROLE_KEY`. Esta clave **nunca** va a GitHub ni al navegador.
+2. Copiar la **publishable** (`sb_publishable_...`) como `SUPABASE_PUBLISHABLE_KEY`.
+3. Copiar la **secret** (`sb_secret_...`) como `SUPABASE_SECRET_KEY`. Esta clave **nunca** va a GitHub ni al navegador.
 4. Configurar `SUPABASE_URL` usando la **Project URL** copiada desde **Supabase → Project Settings → API** (proyecto `qwbiemtonvzucatlvuri`). La URL completa no debe incluirse en archivos versionados para evitar el detector de secretos de Netlify.
 5. Registrar los tres valores en variables de entorno del hosting; si la app ejecuta localmente, en `.env.local`.
 6. Publicar **Next.js como aplicación con funciones de servidor**. No sirve una exportación estática para las APIs de catálogo y Auth.
 
 El adaptador solo se activa si están presentes las tres variables. La URL está fijada en código al proyecto Market Mutual para evitar confundirlo con Bot Afiliados.
+
+Durante la transición también se aceptan las variables legacy
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` y `SUPABASE_SERVICE_ROLE_KEY`. Las claves nuevas
+se envían únicamente mediante `apikey`; `Authorization: Bearer` queda reservado
+para tokens de sesión de usuario y para la antigua `service_role` basada en JWT.
 
 ## Primer administrador
 1. Crear un usuario real desde **Authentication → Users** en el proyecto Market Mutual. Elegir el método de creación/invitación y asegurarse de que pueda iniciar sesión con contraseña.

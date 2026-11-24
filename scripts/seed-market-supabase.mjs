@@ -6,9 +6,9 @@ import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
 const base = process.env.SUPABASE_URL?.replace(/\/$/, '')
-const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+const key = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
 if (!base || !key) {
-  console.error('Faltan SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY. No se modificaron datos.')
+  console.error('Faltan SUPABASE_URL y SUPABASE_SECRET_KEY (o la clave legacy). No se modificaron datos.')
   process.exit(1)
 }
 const origin = new URL(base)
@@ -36,7 +36,8 @@ const products = raw.products.map(p => {
 })
 const families = [...new Set(products.map(p => p.category))].sort((a,b)=>a.localeCompare(b,'es'))
 // Evitar sobrescribir cualquier trabajo ya hecho en el panel.
-const headers = { apikey: key, ...(!key.startsWith('sb_secret_') ? { Authorization: `Bearer ${key}` } : {}), 'Content-Type': 'application/json' }
+const isLegacyJwt = key.startsWith('eyJ') && key.split('.').length === 3
+const headers = { apikey: key, ...(isLegacyJwt ? { Authorization: `Bearer ${key}` } : {}), 'Content-Type': 'application/json' }
 const endpoint = `${base}/rest/v1/market_catalog_state`
 const check = await fetch(`${endpoint}?select=id,revision,products&id=eq.1`, { headers })
 if (!check.ok) throw new Error(`No se pudo comprobar el estado del catálogo (${check.status}): ${await check.text()}`)

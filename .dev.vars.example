@@ -1,5 +1,5 @@
 # Copy this file to .dev.vars only for a local Cloudflare preview.
 # Never commit real values. The service-role key is a server-only secret.
 SUPABASE_URL=
-SUPABASE_SERVICE_ROLE_KEY=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_PUBLISHABLE_KEY=
+SUPABASE_SECRET_KEY=

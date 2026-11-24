@@ -1,5 +1,12 @@
 import { NextResponse } from 'next/server'
-import { assertSameOrigin, baseUrl, supabaseConfigured, supabaseService } from '@/lib/supabase/server'
+import {
+  assertSameOrigin,
+  baseUrl,
+  publishableApiHeaders,
+  publishableKey,
+  supabaseConfigured,
+  supabaseService,
+} from '@/lib/supabase/server'
 export const runtime = 'nodejs'
 export async function POST(request: Request) {
   try {
@@ -9,7 +16,7 @@ export async function POST(request: Request) {
     if (typeof body.email !== 'string' || typeof body.password !== 'string' || !body.email.includes('@') || body.password.length>200)
       return Response.json({error:'Ingresá correo y contraseña válidos.'},{status:400})
     const tokenResponse = await fetch(baseUrl() + '/auth/v1/token?grant_type=password', {
-      method:'POST', headers:{apikey:process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, 'Content-Type':'application/json'},
+      method:'POST', headers:{...publishableApiHeaders(publishableKey()), 'Content-Type':'application/json'},
       body:JSON.stringify({email:body.email,password:body.password}), cache:'no-store',
     })
     if (!tokenResponse.ok) return Response.json({error:'Credenciales incorrectas o cuenta no confirmada.'},{status:401})

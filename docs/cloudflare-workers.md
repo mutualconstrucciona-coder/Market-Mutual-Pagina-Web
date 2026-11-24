@@ -25,8 +25,12 @@ application secrets, so the service-role key does not need to be exposed to the
 build step. Do not put values in `wrangler.jsonc` or commit a `.dev.vars` file.
 
 - `SUPABASE_URL`: URL of the existing Market Mutual Supabase project.
-- `SUPABASE_SERVICE_ROLE_KEY`: secret, server-only key used by the admin API.
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: existing Supabase anonymous/publishable key.
+- `SUPABASE_PUBLISHABLE_KEY`: publishable key used by server-side Auth calls.
+- `SUPABASE_SECRET_KEY`: secret, server-only key used by REST and Storage.
+
+The application also accepts `NEXT_PUBLIC_SUPABASE_ANON_KEY` and
+`SUPABASE_SERVICE_ROLE_KEY` as temporary legacy fallbacks outside Cloudflare.
+Never expose `SUPABASE_SECRET_KEY` or `SUPABASE_SERVICE_ROLE_KEY` to a browser.
 
 The repository pins Node.js 22 through `.node-version` and pnpm through the
 `packageManager` field, so no version variables are required in the dashboard.

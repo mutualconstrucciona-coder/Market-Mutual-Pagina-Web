@@ -14,6 +14,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test:admin": "node --test scripts/test-admin-catalog.cjs",
+    "test:supabase-keys": "node --test --experimental-strip-types scripts/test-supabase-keys.mjs",
     "sync:product-images": "node scripts/sync-product-images.mjs",
     "sync:benefit-logos": "node scripts/sync-benefit-logos.mjs",
     "sync:product-families": "node scripts/sync-product-families.mjs"

@@ -1,8 +1,17 @@
+import 'server-only'
 import { cookies } from 'next/headers'
 import { CatalogError } from '@/lib/admin/catalog-rules'
+import {
+  publishableApiHeaders,
+  resolveSupabaseApiKeys,
+  serviceApiHeaders,
+  userApiHeaders,
+} from '@/lib/supabase/api-keys'
+
+const apiKeys = () => resolveSupabaseApiKeys(process.env)
 
 export const supabaseConfigured = () =>
-  Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  apiKeys().configured
 
 export const baseUrl = () => {
   const url = process.env.SUPABASE_URL
@@ -13,17 +22,21 @@ export const baseUrl = () => {
     throw new Error('SUPABASE_URL no corresponde al proyecto Market Mutual')
   return url
 }
+export const publishableKey = () => {
+  const key = apiKeys().publishableKey
+  if (!key) throw new Error('Falta la clave pública de Supabase')
+  return key
+}
 const serviceKey = () => {
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const key = apiKeys().secretKey
   if (!key) throw new Error('Falta la clave privada de Supabase')
   return key
 }
 export async function supabaseService(path: string, init: RequestInit = {}) {
   const key = serviceKey()
   const headers = new Headers(init.headers)
-  headers.set('apikey', key)
-  // Modern sb_secret_* keys are not JWTs and must not be sent as Bearer tokens.
-  if (!key.startsWith('sb_secret_')) headers.set('Authorization', 'Bearer ' + key)
+  for (const [name, value] of Object.entries(serviceApiHeaders(key)))
+    headers.set(name, value)
   if (init.body && !headers.has('content-type')) headers.set('Content-Type', 'application/json')
   return fetch(baseUrl() + path, { ...init, headers, cache: 'no-store' })
 }
@@ -41,7 +54,7 @@ export async function currentMarketAdmin(): Promise<string | null> {
   const token = (await cookies()).get('market_admin_access')?.value
   if (!token) return null
   const response = await fetch(baseUrl() + '/auth/v1/user', {
-    headers: { apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, Authorization: 'Bearer ' + token },
+    headers: userApiHeaders(publishableKey(), token),
     cache: 'no-store',
   })
   if (!response.ok) return null
@@ -57,3 +70,5 @@ export async function requireMarketAdmin() {
   if (!userId) throw new CatalogError('Iniciá sesión con una cuenta autorizada.', 401)
   return userId
 }
+
+export { publishableApiHeaders }
