@@ -244,6 +244,30 @@
   animation: floating-cart-in 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+@keyframes floating-cart-soft-bounce {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+
+  30% {
+    transform: translate3d(0, -5px, 0) rotate(-4deg) scale(1.08);
+  }
+
+  58% {
+    transform: translate3d(0, 1px, 0) rotate(2deg) scale(0.98);
+  }
+
+  78% {
+    transform: translate3d(0, -2px, 0) rotate(-1deg) scale(1.02);
+  }
+}
+
+.floating-cart-icon-motion {
+  animation: floating-cart-soft-bounce 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: 50% 75%;
+  will-change: transform;
+}
+
 .benefit-logo-track {
   animation: benefit-logo-marquee var(--benefit-marquee-duration, 34s) linear infinite;
   will-change: transform;
@@ -255,7 +279,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .floating-cart-entry {
+  .floating-cart-entry,
+  .floating-cart-icon-motion {
     animation: none;
   }
 
