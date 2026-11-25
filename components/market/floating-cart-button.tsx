@@ -27,11 +27,11 @@ export function FloatingCartButton({
     >
       <span key={cartCount} className="floating-cart-icon-motion flex items-center justify-center" aria-hidden="true">
         <Image
-          src="/icons/market-cart.svg"
+          src="/icons/market-cart.png"
           alt=""
-          width={44}
-          height={44}
-          className="size-11 object-contain drop-shadow-[0_2px_2px_rgba(49,81,166,0.12)]"
+          width={1080}
+          height={1350}
+          className="h-auto w-11 object-contain drop-shadow-[0_2px_2px_rgba(49,81,166,0.12)]"
         />
       </span>
       {cartCount > 0 && (

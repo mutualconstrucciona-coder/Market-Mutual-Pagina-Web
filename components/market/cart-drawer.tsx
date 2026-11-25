@@ -22,12 +22,12 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
 
   return (
     <div
-      className={`fixed inset-0 z-50 transition-[visibility] duration-300 motion-reduce:transition-none ${open ? 'visible' : 'invisible delay-300'}`}
+      className={`fixed inset-0 z-50 transition-[visibility] duration-0 motion-reduce:transition-none ${open ? 'visible' : 'invisible delay-[360ms]'}`}
       aria-hidden={!open}
       inert={!open}
     >
       <button
-        className={`absolute inset-0 bg-[#061a30]/40 backdrop-blur-sm transition-opacity duration-300 ease-out motion-reduce:transition-none ${open ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+        className={`absolute inset-0 bg-[#061a30]/45 transition-opacity duration-300 ease-out motion-reduce:transition-none ${open ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
         onClick={onClose}
         aria-label="Cerrar carrito"
       />
@@ -49,7 +49,7 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
                 <div key={product.id} className="flex gap-3">
                   {/* Las imágenes importadas pueden venir de cualquier proveedor; se usa img en este prototipo local. */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={product.image || '/placeholder-product.svg'} alt="" className="size-16 rounded-xl bg-white object-contain object-center p-1" />
+                  <img src={product.image || '/placeholder-product.svg'} alt="" decoding="async" className="size-16 rounded-xl bg-white object-contain object-center p-1" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold text-[#16385f]">{product.name}</p>
                     <p className="mt-1 text-sm font-semibold text-[#1456a0]">{formatMoney(product.price)}</p>

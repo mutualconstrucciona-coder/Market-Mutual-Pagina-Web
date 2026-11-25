@@ -1,6 +1,7 @@
 'use client'
 
 import { Search, X } from 'lucide-react'
+import { memo } from 'react'
 import { Button } from '@/components/ui/button'
 import { CategorySection } from '@/components/market/category-section'
 import type { CatalogCategory } from '@/components/market/catalog-store'
@@ -19,7 +20,7 @@ type ProductSectionProps = {
   onAdd: (product: Product) => void
 }
 
-export function ProductSection({ products, total, categories, category, query, onQueryChange, onSelectCategory, onLoadMore, onAdd }: ProductSectionProps) {
+export const ProductSection = memo(function ProductSection({ products, total, categories, category, query, onQueryChange, onSelectCategory, onLoadMore, onAdd }: ProductSectionProps) {
   return (
     <section id="productos" className="scroll-mt-36 py-8 sm:py-10">
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
@@ -43,4 +44,4 @@ export function ProductSection({ products, total, categories, category, query, o
       </div>
     </section>
   )
-}
+})

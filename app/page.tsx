@@ -51,16 +51,18 @@ export default function Page() {
   const featuredProducts = useMemo(() => availableProducts.filter(p => p.featured).sort((a,b) => (a.featuredOrder ?? 0) - (b.featuredOrder ?? 0)), [availableProducts])
   const paginatedProducts = useMemo(() => visibleProducts.slice(0, visibleCount), [visibleProducts, visibleCount])
 
-  const changeQuery = (value: string) => {
+  const changeQuery = useCallback((value: string) => {
     setQuery(value)
     setCategory('Todos')
     setVisibleCount(48)
-  }
+  }, [])
 
-  const changeCategory = (value: string) => {
+  const changeCategory = useCallback((value: string) => {
     setCategory(value)
     setVisibleCount(48)
-  }
+  }, [])
+
+  const loadMoreProducts = useCallback(() => setVisibleCount((current) => current + 48), [])
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f4f9fe_0%,#f8fbfe_44%,#f4f8fc_100%)] pb-24 text-[#12243b] md:pb-0">
@@ -89,7 +91,7 @@ export default function Page() {
         query={query}
         onQueryChange={changeQuery}
         onSelectCategory={changeCategory}
-        onLoadMore={() => setVisibleCount((current) => current + 48)}
+        onLoadMore={loadMoreProducts}
         onAdd={handleAddToCart}
       />
       <BenefitsSection />
@@ -100,7 +102,7 @@ export default function Page() {
       <p className="sr-only" role="status" aria-atomic="true">{ready ? `Carrito: ${cartCount} ${cartCount === 1 ? 'producto' : 'productos'}.` : ''}</p>
       <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
       <FloatingCartButton cartReady={ready} cartCount={cartCount} onOpenCart={() => setCartOpen(true)} />
-      <MobileBottomNav cartReady={ready} cartCount={cartCount} onOpenCart={() => setCartOpen(true)} />
+      <MobileBottomNav onOpenCart={() => setCartOpen(true)} />
     </main>
   )
 }
