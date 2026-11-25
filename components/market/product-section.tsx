@@ -40,7 +40,7 @@ export const ProductSection = memo(function ProductSection({ products, total, ca
         ) : <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
           {products.map((product) => <ProductCard key={product.id} product={product} onAdd={onAdd} />)}
         </div>}
-        {products.length < total && <div className="mt-9 flex justify-center"><Button variant="outline" className="rounded-full border-[#1456a0] bg-white px-6 text-[#1456a0] shadow-sm" onClick={onLoadMore}>Mostrar 48 productos más</Button></div>}
+        {products.length < total && <div className="mt-9 flex justify-center"><Button variant="outline" className="rounded-full border-[#1456a0] bg-white px-6 text-[#1456a0] shadow-sm" onClick={onLoadMore}>Mostrar más productos</Button></div>}
       </div>
     </section>
   )
