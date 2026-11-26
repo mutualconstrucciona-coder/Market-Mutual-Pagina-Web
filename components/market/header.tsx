@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useState } from 'react'
 import { BrandLogo } from '@/components/market/brand-logo'
 import { Menu, Search, Settings, ShoppingCart, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -26,6 +27,16 @@ export function Header({
   hasOffers,
   onOpenCart,
 }: HeaderProps) {
+  const readyCount = cartReady ? cartCount : null
+  const [cartMotion, setCartMotion] = useState({ count: readyCount, bounce: false })
+
+  if (cartMotion.count !== readyCount) {
+    setCartMotion({
+      count: readyCount,
+      bounce: readyCount !== null && cartMotion.count !== null && readyCount > cartMotion.count,
+    })
+  }
+
   return (
     <>
       <div className="bg-[#0d2d55] px-4 py-2 text-[11px] font-semibold text-white/90 sm:text-xs">
@@ -48,7 +59,10 @@ export function Header({
               onClick={onOpenCart}
               aria-label={cartReady ? `Abrir carrito, ${cartCount} ${cartCount === 1 ? 'producto' : 'productos'}` : 'Abrir carrito'}
             >
-              <span className="relative flex size-7 shrink-0 items-center justify-center">
+              <span
+                key={readyCount}
+                className={`relative flex size-7 shrink-0 items-center justify-center ${cartMotion.bounce ? 'origin-[50%_75%] md:motion-safe:animate-[floating-cart-soft-bounce_520ms_cubic-bezier(0.22,1,0.36,1)]' : ''}`}
+              >
                 <ShoppingCart className="size-6 stroke-[1.8] text-[#7890ad]" />
                 {cartReady && cartCount > 0 && <span className="absolute -right-2 -top-2 flex min-w-5 items-center justify-center rounded-full bg-[#1456a0] px-1.5 py-0.5 text-[10px] font-extrabold leading-4 text-white ring-2 ring-white">{cartCount}</span>}
               </span>
