@@ -85,6 +85,7 @@ export function buildWhatsAppOrderMessage(options: {
     '*CLIENTE*',
     data.name.trim(),
     `Tel: ${data.phone.trim()}`,
+    ...(data.hasAffiliation ? ['', '🔵 *Afiliación declarada: sí*', 'Verificar vía WhatsApp'] : []),
     '',
     ...deliveryLines,
     '',

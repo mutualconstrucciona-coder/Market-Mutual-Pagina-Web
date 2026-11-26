@@ -26,11 +26,11 @@ export default function CheckoutPage() {
   return (
     <main className="min-h-screen bg-[#f7f9fc] text-[#12243b]">
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center gap-5 px-4 py-4 lg:px-8">
+        <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-4 sm:gap-5 lg:px-8">
           <Link href="/#inicio" className="flex shrink-0 items-center gap-2.5" aria-label="Market Mutual inicio">
             <BrandLogo />
           </Link>
-          <nav className="ml-auto flex items-center gap-2">
+          <nav className="ml-auto flex min-w-0 items-center gap-2">
             <Link href="/" className="text-sm font-semibold text-slate-600 hover:text-[#1456a0]">← Volver a la tienda</Link>
             <Button variant="ghost" size="icon" className="relative rounded-xl text-[#12355f]" onClick={() => setCartOpen(true)} aria-label="Abrir carrito"><ShoppingBag />{cartCount > 0 && <span className="absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full bg-[#ee6b4d] text-[10px] font-bold text-white">{cartCount}</span>}</Button>
           </nav>
@@ -45,9 +45,9 @@ export default function CheckoutPage() {
           <Link href="/#productos" className="mt-6"><Button size="lg" className="rounded-xl bg-[#1456a0] px-6 hover:bg-[#0d4381]">Ver productos</Button></Link>
         </section>
       ) : (
-        <section className="mx-auto grid max-w-7xl gap-8 px-4 py-10 lg:grid-cols-2 lg:px-8">
+        <section className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 py-10 lg:grid-cols-2 lg:px-8">
           <CheckoutForm />
-          <OrderSummary />
+          <OrderSummary className="hidden lg:block" />
         </section>
       )}
 

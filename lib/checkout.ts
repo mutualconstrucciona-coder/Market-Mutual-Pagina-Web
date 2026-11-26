@@ -8,6 +8,7 @@ export type CheckoutData = {
   deliveryMethod: DeliveryMethod | ''
   address: string
   reference: string
+  hasAffiliation: boolean
   observations: string
 }
 
@@ -17,6 +18,7 @@ export const EMPTY_CHECKOUT: CheckoutData = {
   deliveryMethod: '',
   address: '',
   reference: '',
+  hasAffiliation: false,
   observations: '',
 }
 
