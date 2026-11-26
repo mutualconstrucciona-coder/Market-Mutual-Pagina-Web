@@ -170,6 +170,28 @@ const isEmptyRow = (row: ImportCell[]) =>
 const isTotalRow = (row: ImportCell[]) =>
   row.some((cell) => /^(total|totales|subtotal)$/i.test(String(cell ?? '').trim()))
 
+export function compactImportSource(source: ImportSource): ImportSource {
+  const { sku, ean, name, value } = source.mapping
+  const at = (row: ImportCell[], index?: number) => index === undefined ? null : row[index] ?? null
+  return {
+    ...source,
+    mapping: {
+      sku: sku === undefined ? undefined : 0,
+      ean: ean === undefined ? undefined : 1,
+      name: name === undefined ? undefined : 2,
+      value: value < 0 ? value : 3,
+    },
+    rows: source.rows.map((row, index) => {
+      if (index < source.headerRow || (index > source.headerRow && isEmptyRow(row))) return []
+      if (index > source.headerRow && isTotalRow(row)) return ['total']
+      const selected = [at(row, sku), at(row, ean), at(row, name), at(row, value)]
+      // Preserve the classification of rows that only contain unmapped cells.
+      if (index > source.headerRow && isEmptyRow(selected)) selected.push(true)
+      return selected
+    }),
+  }
+}
+
 export function buildImportPreview(
   products: Product[],
   revision: number,

@@ -16,20 +16,37 @@ import {
 import type { CatalogSnapshot } from '@/lib/admin/catalog-rules'
 import {
   suggestImportMapping,
+  compactImportSource,
   type ImportColumnMapping,
   type ImportKind,
   type ImportPreview,
   type ImportSource,
 } from '@/lib/admin/import-rules'
 import type { ImportHistoryItem } from '@/lib/admin/import-repository'
+import type { ParsedImportFile } from '@/lib/admin/import-file'
+import { IMPORT_FILE_SIZE_ERROR, MAX_IMPORT_FILE_MB, MAX_IMPORT_FILE_SIZE } from '@/lib/admin/import-limits'
 import { ONLINE_STOCK_THRESHOLD } from '@/lib/inventory'
 import { formatMoney } from '@/lib/utils'
 
-type ParsedFile = {
-  fileName: string
-  fileHash: string
-  fileSize: number
-  sheets: { name: string; rows: ImportSource['rows']; rowCount: number; columnCount: number }[]
+type ParsedFile = ParsedImportFile
+
+function readFileInBrowser(file: File): Promise<ParsedFile> {
+  const worker = new Worker(new URL('../../lib/admin/import-file.worker.ts', import.meta.url))
+  return new Promise<ParsedFile>((resolve, reject) => {
+    const timeout = window.setTimeout(() => {
+      reject(new Error('El archivo tardó demasiado en procesarse. Probá exportar solo la hoja necesaria o usar CSV.'))
+    }, 60_000)
+    worker.onmessage = ({ data }: MessageEvent<{ parsed?: ParsedFile; error?: string }>) => {
+      window.clearTimeout(timeout)
+      if (data.parsed) resolve(data.parsed)
+      else reject(new Error(data.error || 'No se pudo leer el archivo.'))
+    }
+    worker.onerror = () => {
+      window.clearTimeout(timeout)
+      reject(new Error('No se pudo leer el archivo en el navegador.'))
+    }
+    worker.postMessage(file)
+  }).finally(() => worker.terminate())
 }
 
 const emptyMapping = (): ImportColumnMapping => ({ value: -1 })
@@ -126,11 +143,8 @@ export function ImportManager({
     setBusy('parse')
     onError('')
     try {
-      const form = new FormData()
-      form.append('file', file)
-      const response = await fetch('/api/admin/imports/parse', { method: 'POST', body: form })
-      const result = await response.json()
-      if (!response.ok) throw new Error(result.error)
+      if (file.size > MAX_IMPORT_FILE_SIZE) throw new Error(IMPORT_FILE_SIZE_ERROR)
+      const result = await readFileInBrowser(file)
       setParsed(result)
       configureSheet(result.sheets[0])
       setMissingPolicy('keep')
@@ -145,7 +159,7 @@ export function ImportManager({
 
   const source = (): ImportSource => {
     if (!parsed || !sheet) throw new Error('Cargá un archivo antes de continuar.')
-    return {
+    return compactImportSource({
       kind,
       fileName: parsed.fileName,
       fileHash: parsed.fileHash,
@@ -156,7 +170,7 @@ export function ImportManager({
       mapping,
       missingStockPolicy: kind === 'stock' ? missingPolicy : undefined,
       completeInventoryConfirmed: kind === 'stock' ? completeConfirmed : undefined,
-    }
+    })
   }
 
   const review = async () => {
@@ -262,7 +276,7 @@ export function ImportManager({
             <label className="flex min-h-64 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#9fc3e7] bg-[radial-gradient(circle_at_top,#edf7ff,white_70%)] px-6 text-center transition hover:border-[#1456a0] hover:bg-[#edf7ff] focus-within:ring-4 focus-within:ring-blue-100">
               {busy === 'parse' ? <LoaderCircle className="mb-4 size-11 animate-spin text-[#1456a0]" /> : <Upload className="mb-4 size-11 text-[#2581d2]" />}
               <strong className="text-xl text-[#12355f]">Seleccioná el archivo de Posberry</strong>
-              <span className="mt-2 max-w-xl text-sm leading-6 text-slate-600">Excel .xlsx, .xls compatible o CSV, hasta 5 MB. El archivo se valida en el servidor y no se aplica sin una vista previa.</span>
+              <span className="mt-2 max-w-xl text-sm leading-6 text-slate-600">Excel .xlsx, .xls compatible o CSV, hasta {MAX_IMPORT_FILE_MB} MB. El navegador lee el archivo y el servidor valida los datos antes de confirmar.</span>
               <span className="mt-5 rounded-lg bg-white px-4 py-2 text-sm font-bold text-[#1456a0] shadow-sm">Elegir archivo</span>
               <input className="sr-only" type="file" accept=".xlsx,.xls,.csv" disabled={busy === 'parse'} onChange={(event) => void upload(event.target.files?.[0])} />
             </label>

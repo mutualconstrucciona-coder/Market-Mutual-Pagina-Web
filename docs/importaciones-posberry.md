@@ -11,11 +11,13 @@ No reemplaza el catálogo, no crea productos, no elimina registros y no modifica
 
 ## Formatos y columnas
 
-Se aceptan archivos de hasta 5 MB y 20.000 filas:
+Se aceptan archivos de hasta 15 MB (15 MiB), con hasta 20.000 filas y 100 columnas por hoja:
 
 - `.xlsx`;
 - `.xls` cuando el contenido sea OOXML compatible (los XLS binarios antiguos deben exportarse a XLSX o CSV);
 - `.csv` con coma, punto y coma o tabulación y codificación UTF-8 o Windows-1252.
+
+El panel lee el archivo en un hilo del navegador y envía al servidor únicamente las columnas mapeadas. Los Excel con más de 48 MiB descomprimidos se deben exportar con menos hojas o como CSV. El tope de la solicitud de revisión y confirmación es de 8 MiB para los datos mapeados.
 
 La interfaz muestra las hojas disponibles, permite elegir la fila de encabezados y siempre permite corregir el mapeo manual. Reconoce como sugerencias, sin aplicar cambios automáticamente:
 

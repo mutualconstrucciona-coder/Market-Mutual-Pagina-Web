@@ -36,11 +36,17 @@ const inventory = loadTs('lib/inventory.ts')
 const importRules = loadTs('lib/admin/import-rules.ts', {
   '@/lib/inventory': inventory,
 })
-const { buildImportPreview, applyImportChanges, revertImportChanges } = importRules
+const { buildImportPreview, applyImportChanges, revertImportChanges, compactImportSource } = importRules
+const importLimits = loadTs('lib/admin/import-limits.ts')
 const importFile = loadTs('lib/admin/import-file.ts', {
-  'server-only': {},
+  './import-limits': importLimits,
 })
 const { parseImportFile } = importFile
+const { validateImportSource, boundedImportBody } = loadTs('lib/admin/import-http.ts', {
+  'server-only': {},
+  '@/lib/admin/catalog-rules': mod.exports,
+  '@/lib/admin/import-limits': importLimits,
+})
 
 test('Posberry CSV parsing preserves text codes, accents and quoted separators', async () => {
   const file = new File(
@@ -69,6 +75,40 @@ test('Argentine price formatting does not confuse thousands and cents', () => {
   assert.equal(parsePriceInput('155,50'), 155.5)
   for (const value of ['', '1e3', '1250,501', 'abc'])
     assert.ok(Number.isNaN(parsePriceInput(value)))
+})
+
+test('file boundary accepts exactly 15 MiB and rejects one additional byte', async () => {
+  const limit = importLimits.MAX_IMPORT_FILE_SIZE
+  const prefix = 'SKU;Stock;Notas\n00017;4;'
+  const file = new File([prefix, 'a'.repeat(limit - prefix.length)], 'stock.csv')
+  const parsed = await parseImportFile(file)
+  assert.equal(parsed.fileSize, limit)
+  assert.equal(parsed.sheets[0].rows[1][0], '00017')
+  assert.equal(parsed.sheets[0].rows[1][1], '4')
+  await assert.rejects(parseImportFile(new File([file, 'b'], 'stock.csv')), /15 MB/)
+  const source = {
+    ...parsed, kind: 'stock', sheetName: 'CSV', headerRow: 0,
+    mapping: { sku: 0, value: 1 }, rows: [['SKU', 'Stock'], ['00017', '4']],
+  }
+  assert.equal(validateImportSource(source).fileSize, limit)
+  assert.throws(() => validateImportSource({ ...source, fileSize: limit + 1 }), { status: 413 })
+})
+
+test('request limits count actual bytes without relying on Content-Length', async () => {
+  const request = new Request('http://localhost', { method: 'POST', body: 'áá' })
+  await assert.rejects(boundedImportBody(request, 3, 'Demasiado grande').text(), { status: 413 })
+})
+
+test('Excel expanded-size limit is checked before the archive is decoded', async () => {
+  const zip = Buffer.alloc(72)
+  zip.writeUInt32LE(0x04034b50, 0)
+  zip.writeUInt32LE(0x02014b50, 4)
+  zip.writeUInt32LE(48 * 1024 * 1024 + 1, 28)
+  zip.writeUInt32LE(0x06054b50, 50)
+  zip.writeUInt16LE(1, 60)
+  zip.writeUInt32LE(46, 62)
+  zip.writeUInt32LE(4, 66)
+  await assert.rejects(parseImportFile(new File([zip], 'large.xlsx')), /48 MB al descomprimirse/)
 })
 const product = {
   id: 'sku:1',
@@ -448,6 +488,21 @@ test('revision values prevent stale apply and reversal restores only compatible 
   const applied = applyImportChanges(products, preview.changes)
   assert.deepEqual(revertImportChanges(applied, preview.changes), products)
   assert.throws(() => revertImportChanges([{ ...applied[0], stock: 7 }, ...applied.slice(1)], preview.changes), /cambio posterior/)
+})
+
+test('compacting mapped columns keeps preview, skipped rows, and source row numbers identical', () => {
+  const source = importSource('stock', [
+    ['Informe'],
+    ['Auxiliar', 'EAN', 'Producto', 'Stock', 'SKU'],
+    ['x'.repeat(1000), '', 'Producto A', '5', '1'],
+    ['', '', '', '', ''],
+    ['Total', '', '', '5', ''],
+    ['Dato sin mapear'],
+    ['Auxiliar', 'EAN', 'Producto', 'Stock', 'SKU'],
+  ], { headerRow: 1, mapping: { sku: 4, ean: 1, name: 2, value: 3 } })
+  const compact = compactImportSource(source)
+  assert.ok(JSON.stringify(compact).length < JSON.stringify(source).length)
+  assert.deepEqual(buildImportPreview(importProducts(), 4, compact), buildImportPreview(importProducts(), 4, source))
 })
 
 test('all import API mutations require admin auth and migration records audit atomically', () => {
