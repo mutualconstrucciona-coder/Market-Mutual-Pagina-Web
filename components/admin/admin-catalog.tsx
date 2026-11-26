@@ -79,7 +79,15 @@ function ProductPhoto({ product }: { product: Product }) {
   )
 }
 
-export function AdminCatalog({ localMode, centralMode = false }: { localMode: boolean; centralMode?: boolean }) {
+export function AdminCatalog({
+  localMode,
+  centralMode = false,
+  sharedImagesAvailable = false,
+}: {
+  localMode: boolean
+  centralMode?: boolean
+  sharedImagesAvailable?: boolean
+}) {
   const router = useRouter()
   const { refreshCatalog } = useCatalog()
   const [snapshot, setSnapshot] = useState<CatalogSnapshot | null>(null)
@@ -470,7 +478,7 @@ export function AdminCatalog({ localMode, centralMode = false }: { localMode: bo
                   ? 'Destacados del inicio'
                   : tab === 'imports'
                     ? 'Importaciones masivas'
-                    : 'Preparar el acceso del personal'}
+                    : 'Configuración del panel'}
             </h1>
             <p>
               {tab === 'products'
@@ -551,7 +559,7 @@ export function AdminCatalog({ localMode, centralMode = false }: { localMode: bo
         )}
         {tab === 'configuration' ? (
           <section className={`${styles.panel} ${styles.config}`}>
-            <h2>Qué falta para trabajar desde cualquier PC</h2>
+            <h2>Estado de los servicios</h2>
             <p>
               {centralMode ? 'Las operaciones del catálogo usan Supabase con acceso de personal autorizado.' : 'El panel está preparado para probar cambios localmente; todavía no tiene inicio de sesión ni una base de datos compartida.'}
             </p>
@@ -559,48 +567,48 @@ export function AdminCatalog({ localMode, centralMode = false }: { localMode: bo
               <li>
                 <strong>
                   Base de datos central{' '}
-                  <span className={`${styles.badge} ${styles.warning}`}>
-                    {centralMode ? 'Conectada' : 'Pendiente'}
+                  <span className={styles.badge}>
+                    {!centralMode ? 'Sin configurar' : loading ? 'Consultando' : snapshot ? 'Catálogo cargado' : 'Catálogo no disponible'}
                   </span>
                 </strong>
                 <small>
-                  Conectar el repositorio del catálogo a una base de datos con
-                  copias de seguridad, control de versiones y registro de
-                  cambios.
+                  {centralMode && snapshot
+                    ? `Última revisión cargada: ${snapshot.revision}.`
+                    : 'Supabase almacena el catálogo central y el registro de cambios.'}
                 </small>
               </li>
               <li>
                 <strong>
                   Usuarios y permisos{' '}
-                  <span className={`${styles.badge} ${styles.warning}`}>
-                    Pendiente
+                  <span className={styles.badge}>
+                    {centralMode ? 'Sesión autorizada' : 'Sin acceso central'}
                   </span>
                 </strong>
                 <small>
-                  Configurar inicio de sesión, recuperación de cuenta y permisos
-                  del personal. Validar la sesión en cada operación del
-                  servidor.
+                  {centralMode ? 'El servidor valida la sesión y los permisos en cada operación administrativa.' : 'El acceso central requiere una cuenta administrativa autorizada.'}
                 </small>
               </li>
               <li>
                 <strong>
                   Imágenes compartidas{' '}
-                  <span className={`${styles.badge} ${styles.warning}`}>
-                    Pendiente
+                  <span className={styles.badge}>
+                    {sharedImagesAvailable ? 'Almacenamiento disponible' : centralMode ? 'No verificado' : 'Sin configurar'}
                   </span>
                 </strong>
                 <small>
-                  Configurar almacenamiento central para las nuevas fotos. Las
-                  imágenes actuales se conservan.
+                  {sharedImagesAvailable ? 'Las fotos que se suben desde el panel se guardan en Supabase Storage.' : 'Las imágenes existentes siguen asociadas al catálogo.'}
                 </small>
               </li>
               <li>
                 <strong>
-                  Publicación <span className={styles.badge}>No realizada</span>
+                  Modo del panel <span className={styles.badge}>{centralMode ? 'Central' : localMode ? 'Prueba local' : 'Sin habilitar'}</span>
                 </strong>
                 <small>
-                  En producción, las operaciones administrativas devuelven
-                  acceso no habilitado. No se publicaron estos cambios.
+                  {centralMode
+                    ? 'Los cambios confirmados se guardan en el catálogo que consulta la tienda.'
+                    : localMode
+                      ? 'Los cambios de prueba se guardan en este servidor local.'
+                      : 'La edición requiere configurar el catálogo central.'}
                 </small>
               </li>
             </ul>
